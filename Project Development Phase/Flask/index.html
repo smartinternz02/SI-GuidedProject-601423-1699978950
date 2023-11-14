@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airline Review System</title>
+    <style>
+       body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .autocomplete-item {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #e0e0e0;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <h1>Airline Review System</h1>
+
+    <form id="reviewForm">
+
+        <label for="airline">Airline Name:</label>
+        <div class="autocomplete">
+            <input type="text" id="airline" name="airline" required autocomplete="off">
+            <div class="autocomplete-items" id="airlineAutocomplete"></div>
+        </div>
+
+
+        <label for="overallRating">Overall Rating:</label>
+        <input type="number" id="overallRating" name="overallRating" required>
+
+        <label for="verified">Verified:</label>
+        <select id="verified" name="verified" required>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+
+       
+        <label for="typeOfTraveller">Type Of Traveller:</label>
+        <select id="typeOfTraveller" name="typeOfTraveller" required>
+            <option value="Solo Leisure">Solo Leisure</option>
+            <option value="Couple Leisure">Couple Leisure</option>
+            <option value="Family Leisure">Family Leisure</option>
+            <option value="Business">Business</option>
+        </select>
+
+        <label for="seatType">Seat Type:</label>
+        <select id="seatType" name="seatType" required>
+            <option value="Economy">Economy</option>
+            <option value="Premium">Premium</option>
+            <option value="First">First</option>
+            <option value="Business">Business</option>
+        </select>
+
+        <label for="monthFlown">Month Flown:</label>
+        <input type="text" id="monthFlown" name="monthFlown" required placeholder="E.g., January">
+
+        <label for="yearFlown">Year Flown:</label>
+        <input type="number" id="yearFlown" name="yearFlown" required placeholder="E.g., 2023">
+
+        <label for="seatComfort">Seat Comfort (1-5):</label>
+        <input type="number" id="seatComfort" name="seatComfort" min="1" max="5" required>
+
+        <label for="cabinStaffService">Cabin Staff Service (1-5):</label>
+        <input type="number" id="cabinStaffService" name="cabinStaffService" min="1" max="5" required>
+
+        <label for="foodBeverages">Food & Beverages (1-5):</label>
+        <input type="number" id="foodBeverages" name="foodBeverages" min="1" max="5" required>
+
+        <label for="groundService">Ground Service (1-5):</label>
+        <input type="number" id="groundService" name="groundService" min="1" max="5" required>
+
+        <label for="origin">Origin:</label>
+        <div class="autocomplete">
+            <input type="text" id="origin" name="origin" required autocomplete="off">
+            <div class="autocomplete-items" id="originAutocomplete"></div>
+        </div>
+
+        <label for="destination">Destination:</label>
+        <div class="autocomplete">
+            <input type="text" id="destination" name="destination" required autocomplete="off">
+            <div class="autocomplete-items" id="destinationAutocomplete"></div>
+        </div>
+
+        <button type="button" onclick="predict()">Submit Review</button>
+    </form>
+
+    <div id="output"></div>
+             
+    <center><h3>Recommended</h3></center>
+
+    <script>
+        loadJSON('airline_unique.json', 'airline');
+        loadJSON('Origin.json', 'origin');
+        loadJSON('Dest.json', 'destination');
+
+        function loadJSON(jsonFile, dropdownId) {
+            fetch(jsonFile)
+                .then(response => response.json())
+                .then(data => {
+                    populateDropdown(dropdownId, data);
+                    enableAutocomplete(dropdownId, data);
+                })
+                .catch(error => console.error(`Error loading ${dropdownId} data:`, error));
+        }
+
+        function populateDropdown(id, data) {
+            var dropdown = document.getElementById(id);
+            data.forEach(value => {
+                var option = document.createElement('option');
+                option.value = value;
+                option.text = value;
+                dropdown.add(option);
+            });
+        }
+
+        function enableAutocomplete(dropdownId, data) {
+            var input = document.getElementById(dropdownId);
+            var autocompleteContainer = document.getElementById(dropdownId + 'Autocomplete');
+
+            input.addEventListener('input', function () {
+                var inputValue = this.value.toLowerCase();
+                closeAllLists();
+                if (!inputValue) { return false; }
+
+                var matchingItems = data.filter(item => item.toLowerCase().includes(inputValue));
+
+                matchingItems.forEach(item => {
+                    var autocompleteItem = document.createElement('div');
+                    autocompleteItem.classList.add('autocomplete-item');
+                    autocompleteItem.textContent = item;
+                    autocompleteItem.addEventListener('click', function () {
+                        input.value = item;
+                        closeAllLists();
+                    });
+                    autocompleteContainer.appendChild(autocompleteItem);
+                });
+            });
+
+            function closeAllLists() {
+                var items = document.querySelectorAll('.autocomplete-item');
+                items.forEach(item => item.remove());
+            }
+
+            document.addEventListener('click', function (e) {
+                if (e.target !== input && e.target !== autocompleteContainer) {
+                    closeAllLists();
+                }
+            });
+        }
+
+        function predict() {
+            var formData = {
+                'Airline Name': document.getElementById('airlineName').value,
+                'Overall Rating': parseFloat(document.getElementById('overallRating').value),
+                'Verified': document.getElementById('verified').value,
+                'Type Of Traveller': document.getElementById('typeOfTraveller').value,
+                'Seat Type': document.getElementById('seatType').value,
+                'Month Flown': document.getElementById('monthFlown').value,
+                'Year Flown': parseInt(document.getElementById('yearFlown').value),
+                'Seat Comfort': parseInt(document.getElementById('seatComfort').value),
+                'Cabin Staff Service': parseInt(document.getElementById('cabinStaffService').value),
+                'Food & Beverages': parseInt(document.getElementById('foodBeverages').value),
+                'Ground Service': parseInt(document.getElementById('groundService').value),
+                'Origin': document.getElementById('origin').value,
+                'Destination': document.getElementById('destination').value,
+            };
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    var outputDiv = document.getElementById('output');
+                    outputDiv.innerHTML = '<strong>Recommendation:</strong> ' + data.prediction;
+                    outputDiv.style.color = data.prediction === 1 ? 'green' : 'red';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+
+</body>
+
+</html>
